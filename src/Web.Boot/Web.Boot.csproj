@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <RootNamespace>Web.Boot</RootNamespace>
+    <AssemblyName>Web.Boot</AssemblyName>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>mattjcowan</Authors>
+    <Description>A simple web bootup utility</Description>
+    <Copyright />
+    <Company />
+    <PackageProjectUrl>https://github.com/mattjcowan/web-boot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mattjcowan/web-boot</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>dotnet,aspnet</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>0.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>
