@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet,aspnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>

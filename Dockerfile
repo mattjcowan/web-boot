@@ -1,10 +1,3 @@
-# Build with: 
-# - docker build . -t mattjcowan/web-boot:0.0.1
-# - docker run --rm -it -p 3000:80 mattjcowan/web-boot:0.0.1
-# - docker push mattjcowan/web-boot:0.0.1
-# - docker tag mattjcowan/web-boot:0.0.1 mattjcowan/web-boot:latest
-# - docker push mattjcowan/web-boot:latest
-
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
 #FROM mcr.microsoft.com/dotnet/aspnet:5.0-alpine AS base
 WORKDIR /app
