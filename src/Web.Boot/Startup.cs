@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,12 +10,11 @@ namespace Web.Boot
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHealthChecks();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            var configuration = app.ApplicationServices.GetRequiredService<IConfiguration>();
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -26,7 +24,10 @@ namespace Web.Boot
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/{pathInfo}", async context =>
+                // Configure the Health Check endpoint
+                endpoints.MapHealthChecks("/healthz");
+
+                endpoints.MapGet("/{**pathInfo}", async context =>
                 {
                     var pathInfo = context.Request.RouteValues["pathInfo"];
                     await context.Response.WriteAsync($"Hello from boot! (at /{pathInfo})");
