@@ -2,9 +2,19 @@
 
 dotnet web bootup utility
 
-## package for Docker
+## Docker
+
+Build an image
 
 ```
 cd src/web-boot
-docker build . -t web-build:0.0.1
+docker build . -t mattjcowan/web-boot:0.0.1
 ```
+
+Run it
+
+```
+docker run --rm -it -p 3000:80 mattjcowan/web-boot:0.0.1
+```
+
+
