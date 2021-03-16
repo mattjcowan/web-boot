@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "web-boot", "src\web-boot\we
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4DE22C66-CD96-467D-9E74-95A69B0938B5}"
 	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
 		scripts\bump-version.csx = scripts\bump-version.csx
 		Dockerfile = Dockerfile
 		README.md = README.md
