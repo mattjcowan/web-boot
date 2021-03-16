@@ -62,8 +62,11 @@ services:
       - ./data/boot/extensions:/extensions:ro
 ```
 
+## Notes to self
 
-## Publish
+Notes to self, for maintenance purposes.
+
+### Publish
 
 Set version
 
@@ -88,7 +91,7 @@ NUGET_API_KEY=...
 dotnet nuget push src/Web.Boot/bin/Release/Web.Boot.$WEB_BOOT_VERSION.nupkg -s https://api.nuget.org/v3/index.json -k $NUGET_API_KEY --interactive
 ```
 
-## Docker
+### Docker
 
 Set version
 
