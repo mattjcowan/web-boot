@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
@@ -19,18 +21,42 @@ namespace Web.Boot
                 .Build();
 
             var dataDir = configuration["boot:dataDir"];
+            var extensionsInstallDir = configuration["boot:extensions:installDir"];
+            var extensionsActiveDir = configuration["boot:extensions:activeDir"];
+
             if (!string.IsNullOrWhiteSpace(dataDir))
             {
                 dataDir = Path.GetFullPath(dataDir);
                 Directory.CreateDirectory(dataDir);
             }
+
+            if (!string.IsNullOrWhiteSpace(extensionsInstallDir))
+            {
+                extensionsInstallDir = Path.GetFullPath(extensionsInstallDir);
+                Directory.CreateDirectory(extensionsInstallDir);
+            }
+
+            if (!string.IsNullOrWhiteSpace(extensionsActiveDir))
+            {
+                extensionsActiveDir = Path.GetFullPath(extensionsActiveDir);
+                Directory.CreateDirectory(extensionsActiveDir);
+            }
+
+            // activate extensions
+            CopyDirectoriesRecursive(extensionsInstallDir, extensionsActiveDir,
+                clearTargetDirFirst: true,
+                overwriteTargetFiles: true);
+
+            // load extensions
+            AssemblyLoader.LoadExtensions(extensionsActiveDir);
+
             var startupAssembly = configuration["boot:startupAssembly"];
 
-            var assembly = LocateAssembly(startupAssembly, dataDir);
+            var assembly = LocateStartupAssembly(startupAssembly, dataDir);
 
             if (assembly != null)
             {
-                Console.WriteLine($"Booting with {assembly.FullName}");
+                Console.WriteLine($"Booting from {assembly.FullName}");
 
                 webBuilder.UseSetting(
                     WebHostDefaults.StartupAssemblyKey,
@@ -46,7 +72,7 @@ namespace Web.Boot
             }
         }
 
-        private static Assembly LocateAssembly(string startupAssembly, string dataDir)
+        private static Assembly LocateStartupAssembly(string startupAssembly, string dataDir)
         {
             if (string.IsNullOrWhiteSpace(startupAssembly))
                 return null;
@@ -94,6 +120,103 @@ namespace Web.Boot
             }
 
             return null;
+        }
+
+        private static void CopyDirectoriesRecursive(string sourceDir, string targetDir,
+            Func<DirectoryInfo, bool> excludeSourceDir = null, Func<FileInfo, bool> excludeSourceFile = null,
+            bool clearTargetDirFirst = false, bool overwriteTargetFiles = false)
+        {
+            if (string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(targetDir)) return;
+            if (!Directory.Exists(sourceDir) || !Directory.Exists(targetDir)) return;
+            if (Path.GetFullPath(sourceDir)
+                .Equals(Path.GetFullPath(targetDir), StringComparison.InvariantCultureIgnoreCase)) return;
+
+            if (clearTargetDirFirst)
+            {
+                DeleteDirectoryContentsSafe(targetDir);
+            }
+
+            // Copy directories
+            var sourceDirInfo = new DirectoryInfo(sourceDir);
+            foreach (var dir in sourceDirInfo.GetDirectories("*", SearchOption.AllDirectories))
+            {
+                if (excludeSourceDir != null && excludeSourceDir(dir))
+                    continue;
+
+                var relativePath = Path.GetRelativePath(sourceDir, dir.FullName);
+                Directory.CreateDirectory(Path.Combine(targetDir, relativePath));
+            }
+
+            // Copy files
+            foreach (var file in sourceDirInfo.GetFiles("*.*", SearchOption.AllDirectories))
+            {
+                if (excludeSourceFile != null && excludeSourceFile(file))
+                    continue;
+
+                var relativePath = Path.GetRelativePath(sourceDir, file.FullName);
+                var destinationPath = Path.Combine(targetDir, relativePath);
+
+                if (overwriteTargetFiles)
+                {
+                    if (File.Exists(destinationPath))
+                        continue;
+                }
+
+                File.Copy(file.FullName, destinationPath, overwriteTargetFiles);
+            }
+        }
+
+        private static void DeleteDirectoryContentsSafe(string targetDir)
+        {
+            foreach (var dir in Directory.GetDirectories(targetDir))
+            {
+                try
+                {
+                    Directory.Delete(dir, true);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+
+            foreach (var file in Directory.GetFiles(targetDir, "*.*",
+                SearchOption.AllDirectories))
+            {
+                DeleteFileSafe(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(targetDir))
+            {
+                try
+                {
+                    Directory.Delete(dir, true);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+
+        private static void DeleteFileSafe(string file)
+        {
+            try
+            {
+                File.Delete(file);
+            }
+            catch
+            {
+                try
+                {
+                    Thread.Sleep(100);
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
         }
     }
 }

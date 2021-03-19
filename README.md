@@ -74,10 +74,15 @@ Set version
 dotnet tool install -g dotnet-script
 
 WEB_BOOT_VERSION=0.0.3
-./scripts/bump-version.csx -- --force $WEB_BOOT_VERSION
+dotnet-script scripts/bump-version.csx -- --force $WEB_BOOT_VERSION
+
+# OR, just bump the major, minor, build versions
+dotnet-script scripts/bump-version.csx -- --major
+dotnet-script scripts/bump-version.csx -- --minor
+dotnet-script scripts/bump-version.csx -- --build
 ```
 
-Build and pack, and push to Nuget
+Build and pack
 
 ```
 dotnet build -c Release src/Web.Boot/Web.Boot.csproj
@@ -86,9 +91,15 @@ dotnet build -c Release src/Web.Boot/Web.Boot.csproj
 Publish to nuget
 
 ```
+WEB_BOOT_VERSION=0.0.3
 NUGET_API_KEY=...
 
 dotnet nuget push src/Web.Boot/bin/Release/Web.Boot.$WEB_BOOT_VERSION.nupkg -s https://api.nuget.org/v3/index.json -k $NUGET_API_KEY --interactive
+
+# or on Windows
+set WEB_BOOT_VERSION=0.0.3
+set NUGET_API_KEY=..
+dotnet nuget push src/Web.Boot/bin/Release/Web.Boot.%WEB_BOOT_VERSION%.nupkg -s https://api.nuget.org/v3/index.json -k %NUGET_API_KEY% --interactive
 ```
 
 ### Docker
@@ -97,7 +108,7 @@ Set version
 
 ```
 WEB_BOOT_REPO=mattjcowan/web-boot
-WEB_BOOT_VERSION=0.0.1
+WEB_BOOT_VERSION=0.0.3
 ```
 
 Build an image

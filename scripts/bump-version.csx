@@ -1,5 +1,3 @@
-#!/usr/bin/env dotnet-script
-
 var dir = Directory.GetCurrentDirectory();
 
 // See: https://github.com/filipw/dotnet-script
@@ -25,13 +23,13 @@ else if (type == null)
 if (showHelp)
 {
     Console.WriteLine(@"
-    Call this script as follows:
+    Call this script from the root of your repo as follows:
     
-      -> ./bump-version.csx -- --help
-      -> ./bump-version.csx -- --minor
-      -> ./bump-version.csx -- --major
-      -> ./bump-version.csx -- --build
-      -> ./bump-version.csx -- --force 2.3.45
+      -> dotnet-script ./scripts/bump-version.csx -- --help
+      -> dotnet-script ./scripts/bump-version.csx -- --minor
+      -> dotnet-script ./scripts/bump-version.csx -- --major
+      -> dotnet-script ./scripts/bump-version.csx -- --build
+      -> dotnet-script ./scripts/bump-version.csx -- --force 2.3.45
     ");
     return;
 }
