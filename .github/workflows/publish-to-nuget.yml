@@ -1,0 +1,43 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Install dependencies
+      run: |
+        dotnet restore src/Web.Boot/Web.Boot.csproj
+
+    - name: Build
+      run: |
+        dotnet build -c Release src/Web.Boot/Web.Boot.csproj --no-restore
+
+    # - name: Test
+    #   run: |
+    #     dotnet test --no-restore --verbosity normal
+
+    - name: Publish to nuget
+      # see: https://github.com/brandedoutcast/publish-nuget
+      uses: brandedoutcast/publish-nuget@v2.5.2
+      with:
+        PROJECT_FILE_PATH: src/Web.Boot/Web.Boot.csproj
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}

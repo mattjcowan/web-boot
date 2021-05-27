@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Reflection;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,9 +26,16 @@ namespace Web.Boot
                 // don't load the same assembly twice
                 if (previouslyLoadedAssemblyNames.Contains(fileNameLowerCase))
                     continue;
-                
+
+                if (AssemblyLoadContext.Default.Assemblies.Any(a => a.GetName().Name.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Console.WriteLine("An assembly matching " + fileName + " has already been loaded");
+                    continue;
+                }
+
                 try
                 {
+                    Console.WriteLine("Attepting to load: " + dll);
                     var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(dll);
                     var assemblyNameLowerCase = assembly.GetName().Name?.ToLowerInvariant();
 
