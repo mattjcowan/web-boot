@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,49 +9,41 @@ using Microsoft.Extensions.Configuration;
 
 namespace Web.Boot
 {
-    public static class IWebHostBuilderExtensions
+    public static class WebHostBuilderExtensions
     {
         public static void ConfigureWebHost(this IWebHostBuilder webBuilder)
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", optional: true, false)
-                .AddJsonFile($"appsettings.Release.json", optional: true, reloadOnChange: false)
+                .AddJsonFile("appsettings.json", true, false)
+                .AddJsonFile("appsettings.Release.json", true, false)
                 .AddEnvironmentVariables()
                 .Build();
 
-            var dataDir = configuration["boot:dataDir"];
-            var extensionsInstallDir = configuration["boot:extensions:installDir"];
-            var extensionsActiveDir = configuration["boot:extensions:activeDir"];
+            var bootConfig = configuration.GetBootConfig();
 
-            if (!string.IsNullOrWhiteSpace(dataDir))
+            // add key-per-file configuration capabilities to the application
+            if (!string.IsNullOrWhiteSpace(bootConfig.ConfigDir) &&
+                Directory.Exists(bootConfig.ConfigDir))
             {
-                dataDir = Path.GetFullPath(dataDir);
-                Directory.CreateDirectory(dataDir);
-            }
+                webBuilder.ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddKeyPerFile(bootConfig.ConfigDir, true, true);
+                });
 
-            if (!string.IsNullOrWhiteSpace(extensionsInstallDir))
-            {
-                extensionsInstallDir = Path.GetFullPath(extensionsInstallDir);
-                Directory.CreateDirectory(extensionsInstallDir);
-            }
-
-            if (!string.IsNullOrWhiteSpace(extensionsActiveDir))
-            {
-                extensionsActiveDir = Path.GetFullPath(extensionsActiveDir);
-                Directory.CreateDirectory(extensionsActiveDir);
+                if (!string.IsNullOrWhiteSpace(bootConfig.WebDir))
+                    webBuilder.UseWebRoot(bootConfig.WebDir);
             }
 
             // activate extensions
-            CopyDirectoriesRecursive(extensionsInstallDir, extensionsActiveDir,
+            CopyDirectoriesRecursive(bootConfig.ExtensionsDir, bootConfig.RuntimeExtensionsDir,
                 clearTargetDirFirst: true,
                 overwriteTargetFiles: true);
 
-            // load extensions
-            AssemblyLoader.LoadExtensions(extensionsActiveDir);
+            // load extensions into assembly context
+            AssemblyLoader.LoadExtensions(bootConfig.RuntimeExtensionsDir);
 
-            var startupAssembly = configuration["boot:startupAssembly"];
-
-            var assembly = LocateStartupAssembly(startupAssembly, dataDir);
+            // locate the startup assembly
+            var assembly = LocateStartupAssembly(bootConfig.StartupAssembly, bootConfig.DataDir);
 
             if (assembly != null)
             {
@@ -68,6 +59,9 @@ namespace Web.Boot
             }
             else
             {
+                if (!string.IsNullOrWhiteSpace(bootConfig.StartupAssembly))
+                    Console.WriteLine($"Unable to locate assembly '{bootConfig.StartupAssembly}'");
+
                 webBuilder.UseStartup<Startup>();
             }
         }
@@ -79,7 +73,9 @@ namespace Web.Boot
 
             // is startupAssembly an assembly name
             var filePath = Path.GetExtension(startupAssembly)
-                .Equals(".dll", StringComparison.InvariantCultureIgnoreCase) ? startupAssembly : $"{startupAssembly}.dll";
+                .Equals(".dll", StringComparison.InvariantCultureIgnoreCase)
+                ? startupAssembly
+                : $"{startupAssembly}.dll";
             var fileName = Path.GetFileName(filePath);
             var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
 
@@ -101,20 +97,16 @@ namespace Web.Boot
                 {
                     Assembly assembly = null;
                     foreach (var d in Directory.GetFiles(fileDir, "*.dll", SearchOption.AllDirectories))
-                    {
                         try
                         {
                             var da = AssemblyLoadContext.Default.LoadFromAssemblyPath(d);
-                            if (fileName.Equals(Path.GetFileName(d), StringComparison.OrdinalIgnoreCase))
-                            {
-                                assembly = da;
-                            }
+                            if (fileName.Equals(Path.GetFileName(d), StringComparison.OrdinalIgnoreCase)) assembly = da;
                         }
                         catch
                         {
                             // ignored
                         }
-                    }
+
                     return assembly;
                 }
             }
@@ -131,10 +123,7 @@ namespace Web.Boot
             if (Path.GetFullPath(sourceDir)
                 .Equals(Path.GetFullPath(targetDir), StringComparison.InvariantCultureIgnoreCase)) return;
 
-            if (clearTargetDirFirst)
-            {
-                DeleteDirectoryContentsSafe(targetDir);
-            }
+            if (clearTargetDirFirst) DeleteDirectoryContentsSafe(targetDir);
 
             // Copy directories
             var sourceDirInfo = new DirectoryInfo(sourceDir);
@@ -157,10 +146,8 @@ namespace Web.Boot
                 var destinationPath = Path.Combine(targetDir, relativePath);
 
                 if (overwriteTargetFiles)
-                {
                     if (File.Exists(destinationPath))
                         continue;
-                }
 
                 File.Copy(file.FullName, destinationPath, overwriteTargetFiles);
             }
@@ -169,7 +156,6 @@ namespace Web.Boot
         private static void DeleteDirectoryContentsSafe(string targetDir)
         {
             foreach (var dir in Directory.GetDirectories(targetDir))
-            {
                 try
                 {
                     Directory.Delete(dir, true);
@@ -178,16 +164,12 @@ namespace Web.Boot
                 {
                     // ignored
                 }
-            }
 
             foreach (var file in Directory.GetFiles(targetDir, "*.*",
                 SearchOption.AllDirectories))
-            {
                 DeleteFileSafe(file);
-            }
 
             foreach (var dir in Directory.GetDirectories(targetDir))
-            {
                 try
                 {
                     Directory.Delete(dir, true);
@@ -196,7 +178,6 @@ namespace Web.Boot
                 {
                     // ignored
                 }
-            }
         }
 
         private static void DeleteFileSafe(string file)

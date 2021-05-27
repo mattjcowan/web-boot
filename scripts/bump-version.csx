@@ -1,13 +1,25 @@
+// How to call this script (also see https://github.com/filipw/dotnet-script)
+
+// dotnet tool install -g dotnet-script
+
+// # just bump the build, minor, major versions
+// dotnet-script scripts/bump-version.csx -- --build
+// dotnet-script scripts/bump-version.csx -- --minor
+// dotnet-script scripts/bump-version.csx -- --major
+
+// # OR, set a specific version
+// WEB_BOOT_VERSION=0.0.3
+// dotnet-script scripts/bump-version.csx -- --force $WEB_BOOT_VERSION
+
 var dir = Directory.GetCurrentDirectory();
 
-// See: https://github.com/filipw/dotnet-script
 var args = Args.ToArray();
 var showHelp = (args == null || args.Length == 0 || args.Contains("-h") || args.Contains("--help"));
 
-var forceVersion = (string) null;
-var type = args.Contains("--major") ? "major": (
-    args.Contains("--minor") ? "minor": (
-        args.Contains("--build") ? "build": null
+var forceVersion = (string)null;
+var type = args.Contains("--major") ? "major" : (
+    args.Contains("--minor") ? "minor" : (
+        args.Contains("--build") ? "build" : null
     )
 );
 if (type == null && args.Contains("--force") && args.Length > (Array.IndexOf(args, "--force") + 1))
@@ -34,11 +46,11 @@ if (showHelp)
     return;
 }
 
-var firstVersion = forceVersion != null ? new Version(forceVersion): new Version(0,0,1);
+var firstVersion = forceVersion != null ? new Version(forceVersion) : new Version(0, 0, 1);
 var lastVersion = firstVersion;
 
 var csProjFiles = Directory.GetFiles(dir, "*.csproj", SearchOption.AllDirectories);
-foreach(var csProjFile in csProjFiles)
+foreach (var csProjFile in csProjFiles)
 {
     var csProjFileName = Path.GetFileName(csProjFile);
     var csProjContents = File.ReadAllText(csProjFile);
@@ -64,11 +76,11 @@ foreach(var csProjFile in csProjFiles)
     if (idx1 > 0 && idx2 > idx1)
     {
         var version = new Version(csProjContents.Substring(idx1 + 9, idx2 - idx1 - 9));
-        var newVersion = forceVersion != null ? new Version(forceVersion): 
+        var newVersion = forceVersion != null ? new Version(forceVersion) :
             new Version(
-                type == "major" ? version.Major + 1: version.Major, 
-                type == "minor" ? version.Minor + 1: version.Minor, 
-                type == "build" ? version.Build + 1: version.Build);
+                type == "major" ? version.Major + 1 : version.Major,
+                type == "minor" ? version.Minor + 1 : version.Minor,
+                type == "build" ? version.Build + 1 : version.Build);
         csProjContents = csProjContents.Substring(0, idx1 + 9) + newVersion + csProjContents.Substring(idx2);
         File.WriteAllText(csProjFile, csProjContents);
         Console.WriteLine($"Updated project {csProjFileName} to version {newVersion}.");
@@ -78,9 +90,9 @@ foreach(var csProjFile in csProjFiles)
 
 var shScript = Path.Combine(dir, "scripts", "some_other_script.sh");
 if (File.Exists(shScript))
-{	
-	var shFileLines = File.ReadAllLines(shScript);
-	var appVersionLineIdx = Array.FindIndex(shFileLines, l => l.Trim().StartsWith("APP_VERSION="));
-	shFileLines[appVersionLineIdx]=$"APP_VERSION={lastVersion}";
-	File.WriteAllLines(shScript, shFileLines);
+{
+    var shFileLines = File.ReadAllLines(shScript);
+    var appVersionLineIdx = Array.FindIndex(shFileLines, l => l.Trim().StartsWith("APP_VERSION="));
+    shFileLines[appVersionLineIdx] = $"APP_VERSION={lastVersion}";
+    File.WriteAllLines(shScript, shFileLines);
 }
