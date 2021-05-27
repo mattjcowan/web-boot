@@ -188,25 +188,7 @@ dotnet-script scripts/bump-version.csx -- --minor
 dotnet-script scripts/bump-version.csx -- --build
 ```
 
-Build and pack
-
-```
-dotnet build -c Release src/Web.Boot/Web.Boot.csproj
-```
-
-Publish to nuget
-
-```
-WEB_BOOT_VERSION=0.0.3
-NUGET_API_KEY=...
-
-dotnet nuget push src/Web.Boot/bin/Release/Web.Boot.$WEB_BOOT_VERSION.nupkg -s https://api.nuget.org/v3/index.json -k $NUGET_API_KEY --interactive
-
-# or on Windows
-set WEB_BOOT_VERSION=0.0.3
-set NUGET_API_KEY=..
-dotnet nuget push src/Web.Boot/bin/Release/Web.Boot.%WEB_BOOT_VERSION%.nupkg -s https://api.nuget.org/v3/index.json -k %NUGET_API_KEY% --interactive
-```
+If the version changes, the [publish-to-nuget](https://github.com/mattjcowan/web-boot/blob/main/.github/workflows/publish-to-nuget.yml) Github action will automatically publish the new version to nuget.
 
 ### Docker
 

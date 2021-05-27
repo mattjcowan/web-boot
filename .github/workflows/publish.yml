@@ -1,4 +1,4 @@
-name: publish to nuget
+name: publish
 
 on:
   push:
@@ -13,10 +13,11 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -35,6 +36,11 @@ jobs:
     #   run: |
     #     dotnet test --no-restore --verbosity normal
 
+    - name: Extract version      
+      run: |
+        PROJ_VERSION=$(sed -n 's/<Version>\(.*\)<\/Version>/\1/p' src/web-boot/web-boot.csproj)
+        echo "PROJ_VERSION=$PROJ_VERSION" >> $GITHUB_ENV
+
     - name: Publish to nuget
       # see: https://github.com/brandedoutcast/publish-nuget
       if: github.ref == 'refs/heads/main'
@@ -42,3 +48,12 @@ jobs:
       with:
         PROJECT_FILE_PATH: src/Web.Boot/Web.Boot.csproj
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+
+    - name: Publish to docker
+      if: github.ref == 'refs/heads/main'
+      uses: elgohr/Publish-Docker-Github-Action@main
+      with:
+        name: mattjcowan/web-boot
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        tags: "latest,${{ env.PROJ_VERSION }}"
