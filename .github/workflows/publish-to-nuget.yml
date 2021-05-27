@@ -37,6 +37,7 @@ jobs:
 
     - name: Publish to nuget
       # see: https://github.com/brandedoutcast/publish-nuget
+      if: github.ref == 'refs/heads/main'
       uses: brandedoutcast/publish-nuget@v2.5.2
       with:
         PROJECT_FILE_PATH: src/Web.Boot/Web.Boot.csproj
