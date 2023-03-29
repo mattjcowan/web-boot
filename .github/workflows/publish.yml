@@ -51,7 +51,7 @@ jobs:
 
     - name: Publish to docker
       if: github.ref == 'refs/heads/main'
-      uses: elgohr/Publish-Docker-Github-Action@main
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         name: mattjcowan/web-boot
         username: ${{ secrets.DOCKER_USERNAME }}
